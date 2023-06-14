@@ -24,6 +24,12 @@ const createContact = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("All fields are mandatory");
   }
+
+  const emailAvailable = await Contact.findOne({email});
+  if(emailAvailable){
+    res.status(400);
+    throw new Error(`Contact already saved with the email is ${email}`);
+  }
   const contact = await Contact.create({
     name,
     email,
@@ -39,10 +45,15 @@ const createContact = asyncHandler(async (req, res) => {
 // @route GET/api/contacts/id
 // @access private
 const getContact = asyncHandler(async (req, res) => {
+  
   const contact = await Contact.findById(req.params.id);
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found😒");
+  }
+  if (contact.user_id.toString() != req.user.id) {
+    res.status(403);
+    throw new Error("User dont have permission to see other user contact");
   }
   res.status(200).json({
     contact,
